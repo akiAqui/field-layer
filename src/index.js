@@ -14,6 +14,7 @@ new p5( (sketch) => {
     const maxmode=1;
     let isAwaitingInput = false;
     let debflag=false;
+    let sin,cos;
     
     function keyPressed() {
 	if (key === 's' || key === 'S') {  // 「s」または「S」が押された場合
@@ -110,7 +111,7 @@ new p5( (sketch) => {
             this.vel.vy = Math.sqrt(2.0*this.energy/c.m)*Math.sin(this.theta*this.flag);
 	    //if (Number.isNaN(this.vy)) {console.log("i:",this.index," theta=",this.theta," vy is NaN");}
             this.type = type;
-            this.radius = c.R+this.theta*8;
+            this.radius = c.R-1;//+this.theta*8;
             this.mass = c.m;
             this.color = type === 'P' ? COLOR_POSITIVE : COLOR_NEGATIVE;
 	    if (this.index===THIS) this.color = COLOR_HIGHLIGHTED;
@@ -120,6 +121,12 @@ new p5( (sketch) => {
             if (isNaN(this.vel.vx) || isNaN(this.vel.vy)) {
 		throw new Error("vx or vy is NaN at constructor");
             }	    
+	}
+	sin(){
+	    return Math.abs(Math.sin(stime*sketch.TWO_PI*0.002+this.theta));
+	}
+	cos(){
+	    return Math.abs(Math.cos(stime*sketch.TWO_PI*0.002+this.theta));
 	}
 	logging(index=this.index,memo=''){
 	    if (this.index===index) {
@@ -149,8 +156,13 @@ new p5( (sketch) => {
 		console.groupEnd("Particle.constructor");		
 	    }
 	}
+	LeftRightRandom(){
+	    
+	    this.pos.x+=Math.random()>0.99 ? (Math.random()*5 * (Math.random()>0.5 ? 1.0 : -1.0 )) : 0;
+	}
 	updatePosition(){
 	    //this.logging(THIS, "updatePosition begin");
+	    this.LeftRightRandom();
             this.pos.x += this.vel.vx * c.dt;
             this.pos.y += this.vel.vy * c.dt;
             if (this.pos.x < 0) this.pos.x += c.L;
@@ -178,8 +190,9 @@ new p5( (sketch) => {
 	    // for color RGB
             //this.color = sketch.lerpColor(COLOR_ZERO, this.type === 'P' ? COLOR_POSITIVE : COLOR_NEGATIVE, ratio);
 	    // for grayScale
-	    this.color= BACKGROUND>127.5 ?
-		127.5 + (BACKGROUND-127.5)*Math.min(ratio, 1.0) : 127.5-(127.5-BACKGROUND)*Math.min(ratio, 1.0);
+	    //this.color= BACKGROUND>127.5 ? 127.5 + (BACKGROUND-127.5)*Math.min(ratio, 1.0) : 127.5-(127.5-BACKGROUND)*Math.min(ratio, 1.0);
+	    this.color=sketch.color(255-120*this.sin(),255-120*this.sin(),255-120*this.sin());
+		
 	    //this.color=ratio*BACKGROUND > 255 ? ratio*BACKGROUND -255 : ratio*BACKGROUND;
 	    if (this.index===THIS) this.color = COLOR_HIGHLIGHTED;
 	    
@@ -202,7 +215,8 @@ new p5( (sketch) => {
 	draw(){
             sketch.noStroke();
             sketch.fill(this.color);
-            sketch.ellipse(this.pos.x, this.pos.y, this.radius * 2);
+	    const r=this.radius * (this.flag>0 ? this.sin():this.cos()) + this.radius;
+            sketch.ellipse(this.pos.x, this.pos.y,r)
 	    switch(mode) {
 	    case 0: //無表記
 		break;
@@ -454,7 +468,9 @@ new p5( (sketch) => {
     */
 
     function updateFixedColors(){
-	BACKGROUND=255.0*Math.abs(Math.cos(stime*sketch.TWO_PI*0.002));
+	cos=Math.abs(Math.cos(stime*sketch.TWO_PI*0.002));
+	sin=Math.abs(Math.sin(stime*sketch.TWO_PI*0.002));
+	BACKGROUND=255.0*cos;
 	//console.log("stime=",stime);
 	//console.log("two_pi=",sketch.TWO_PI);
 	//console.log("stime*Math.TWO_PI=",stime*sketch.TWO_PI*0.1,"background=",BACKGROUND);
@@ -501,8 +517,8 @@ new p5( (sketch) => {
 	for (const particle of particles) {
 	    particle.update();     // 粒子の位置、速度、エネルギー、加速度の更新。色の更新。
 	    particle.draw();       // 描画
-	    sketch.strokeWeight(2);
-	    sketch.fill(25);
+	    //sketch.strokeWeight(2);
+	    //sketch.fill(25);
 	}
 	
 	//for (const quark of quarks) {
